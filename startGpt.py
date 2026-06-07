@@ -80,7 +80,7 @@ async def save_to_db(result: InvoiceData):
     try:
         # Создаем таблицу, если ее нет
         await conn.execute("""
-            CREATE TABLE IF NOT EXISTS clients (
+            CREATE TABLE IF NOT EXISTS bills (
                 id SERIAL PRIMARY KEY,
                 name TEXT,
                 address TEXT,
@@ -97,7 +97,7 @@ async def save_to_db(result: InvoiceData):
         address_str = result.address.to_string() if result.address else None
 
         await conn.execute("""
-            INSERT INTO clients (name, address, city, country, username, email, amount, currency, postal, has_nz_tax_15) 
+            INSERT INTO bills (name, address, city, country, username, email, amount, currency, postal, has_nz_tax_15) 
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         """, 
         result.name, address_str, result.city, result.country, 
