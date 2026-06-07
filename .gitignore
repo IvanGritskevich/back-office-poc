@@ -1,0 +1,36 @@
+# Виртуальное окружение (ВАЖНО: у вас есть папка venv)
+.venv/
+venv/
+env/
+ENV/
+
+# Файлы байт-кода Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Логи и базы данных
+*.log
+*.db
+*.sqlite
+
+# Файлы с секретами и локальными настройками
+.env
+config.py
+credentials.yml
+secrets.py
+
+# Редакторы кода (VS Code, PyCharm)
+.vscode/
+.idea/
+*.swp
+
+# Файлы операционной системы (особенно актуально для Windows/Mac)
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Файлы отчетов и тестов
+.coverage
+.pytest_cache/
+.tox/
