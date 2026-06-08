@@ -11,30 +11,6 @@ import docx
 import openpyxl
 from groq import AsyncGroq  # Импортируем асинхронный клиент Groq
 
-async def check_user_access(user_id: int) -> bool:
-    """Проверяет наличие user_id в таблице разрешенных пользователей"""
-    conn = await asyncpg.connect(
-        user=os.getenv("DB_USER"), 
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"), 
-        host=os.getenv("DB_HOST")
-    )
-    try:
-        # Создаем таблицу белого списка, если её ещё нет
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS allowed_users (
-                user_id BIGINT PRIMARY KEY,
-                username TEXT,
-                added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-        
-        # Ищем пользователя в базе данных
-        row = await conn.fetchrow("SELECT 1 FROM allowed_users WHERE user_id = $1", user_id)
-        return row is not None
-    finally:
-        await conn.close()
-
 # Загружаем переменные окружения
 dotenv_path = Path('key.env')
 load_dotenv(dotenv_path=dotenv_path)
@@ -70,41 +46,42 @@ def parse_xlsx(file_bytes: bytes) -> str:
     return "\n".join(full_text)
 
 
-async def save_to_db(result: InvoiceData):
+async def save_to_db(result: InvoiceData, manager_id: int):
     conn = await asyncpg.connect(
         user=os.getenv("DB_USER"), 
         password=os.getenv("DB_PASSWORD"),
         database=os.getenv("DB_NAME"), 
         host=os.getenv("DB_HOST")
     )
+    
     try:
-        # Создаем таблицу, если ее нет
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS bills (
-                id SERIAL PRIMARY KEY,
-                name TEXT,
-                address TEXT,
-                city TEXT,
-                country TEXT,
-                username TEXT,
-                email TEXT,
-                amount NUMERIC,
-                currency TEXT,
-                postal TEXT,
-                has_nz_tax_15 TEXT
-            );
-        """)
-        address_str = result.address.to_string() if result.address else None
+        # Открываем транзакцию, чтобы всё записалось атомарно
+        async with conn.transaction():
+            # 1. Проверяем, существует ли уже клиент с такой почтой
+            client_id = None
+            if result.email:
+                client_id = await conn.fetchval("SELECT client_id FROM clients WHERE email = $1", result.email)
+                
+            # Если клиента нет, создаем новую карточку клиента
+            if not client_id:
+                address_str = result.address.to_string() if result.address else "Не указан"
+                client_id = await conn.fetchval("""
+                    INSERT INTO clients (name, address, city, country, postal, email) 
+                    VALUES ($1, $2, $3, $4, $5, $6) 
+                    RETURNING client_id
+                """, result.name, address_str, result.city, result.country, result.postal, result.email)
 
-        await conn.execute("""
-            INSERT INTO bills (name, address, city, country, username, email, amount, currency, postal, has_nz_tax_15) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        """, 
-        result.name, address_str, result.city, result.country, 
-        result.username, result.email, result.amount, result.currency, result.postal, result.has_nz_tax_15)
+            # Превращаем "Да"/"Нет" от ИИ в понятный для Postgres BOOLEAN (True/False)
+            is_nz_tax = True if result.has_nz_tax_15 == "Да" else False
+
+            # 2. Записываем сам счет в таблицу bills, привязывая его к ID клиента и ID менеджера
+            await conn.execute("""
+                INSERT INTO bills (client_id, amount, currency, has_nz_tax_15, created_by) 
+                VALUES ($1, $2, $3, $4, $5)
+            """, client_id, result.amount, result.currency, is_nz_tax, manager_id)
+        
     finally:
         await conn.close()
-
 
 async def extract_invoice_multimedia(text_prompt: str, files_list: list) -> InvoiceData:
     """
