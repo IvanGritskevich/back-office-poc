@@ -1,0 +1,1 @@
+CreateObject("Wscript.Shell").Run "cmd /c cd /d D:\job_night\exel_group && venv\Scripts\activate && pythonw test.py", 0, False

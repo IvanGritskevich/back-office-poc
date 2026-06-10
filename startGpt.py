@@ -10,6 +10,44 @@ import io
 import docx
 import openpyxl
 from groq import AsyncGroq  # Импортируем асинхронный клиент Groq
+import json
+
+async def save_to_pending(sender_email: str, result) -> int:
+    """Безопасное сохранение сырых данных ИИ во временную таблицу"""
+    
+    # Конвертируем Pydantic-модель в JSON строку
+    if hasattr(result, "model_dump_json"):
+        json_data = result.model_dump_json()
+    else:
+        json_data = result.json()
+
+    # Открываем СВЕЖЕЕ соединение прямо в момент записи
+    # Переменные окружения берутся из твоего key.env, который загружается при старте
+    conn = await asyncpg.connect(
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME", "exel_group"),
+        host=os.getenv("DB_HOST", "127.0.0.1"),
+        port=os.getenv("DB_PORT", "5432")
+    )
+    
+    try:
+        # Выполняем запрос внутри блока try
+        row = await conn.fetchrow(
+            """
+            INSERT INTO pending_invoices (sender_email, raw_data)
+            VALUES ($1, $2)
+            RETURNING id;
+            """,
+            sender_email, json_data
+        )
+        return row['id']
+        
+    finally:
+        # Блок finally выполнится ЖЕЛЕЗНО, даже если запрос упадет с ошибкой.
+        # Это гарантирует, что соединение не «повиснет» в пуле Postgres
+        await conn.close()
+
 
 # Загружаем переменные окружения
 dotenv_path = Path('key.env')
