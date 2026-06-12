@@ -120,8 +120,12 @@ async def save_to_db(result: InvoiceData, created_by: int):
                     RETURNING client_id
                 """, result.name, address_str, result.city, result.country, result.postal, result.email)
 
-            has_nz = result.has_nz_tax_15 if hasattr(result, 'has_nz_tax_15') else getattr(result, 'has_nz_tax_15', dict(result).get('has_nz_tax_15', 'Нет'))
-            is_nz_tax = True if has_nz == "Да" else False
+            if hasattr(result, 'has_nz_tax_15'):
+                has_nz = result.has_nz_tax_15
+            elif hasattr(result, 'get'):
+                has_nz = result.get('has_nz_tax_15', 'Нет')
+            else:
+                has_nz = getattr(result, 'has_nz_tax_15', 'Нет')
 
             # 2. Записываем сам счет в таблицу bills, привязывая его к ID клиента и ID менеджера
             await conn.execute("""
