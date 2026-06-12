@@ -55,13 +55,6 @@ load_dotenv(dotenv_path=dotenv_path)
 api_key_1 = os.getenv("API_KEY")
 api_key_2 = os.getenv("API_KEY_2")
 
-# Печатаем в логи первые 10 символов ключей для отладки (БЕЗОПАСНО)
-print(f"DEBUG GEMINI: API_KEY загружен? {'Да (' + api_key_1[:10] + '...)' if api_key_1 else 'НЕТ (Пусто)'}")
-print(f"DEBUG GEMINI: API_KEY_2 загружен? {'Да (' + api_key_2[:10] + '...)' if api_key_2 else 'НЕТ (Пусто)'}")
-
-if not api_key_1 or not api_key_2:
-    print("🚨 КРИТИЧЕСКАЯ ОШИБКА: Переменные API_KEY или API_KEY_2 не дошли до контейнера! Проверь docker-compose.yml.")
-
 # Инициализируем клиенты строго с явным указанием api_key
 client = genai.Client(api_key=api_key_1)
 client_2 = genai.Client(api_key=api_key_2)
