@@ -9,7 +9,6 @@ from gpt import InvoiceData
 import io
 import docx
 import openpyxl
-from groq import AsyncGroq  # Импортируем асинхронный клиент Groq
 import json
 
 async def save_to_pending(sender_email: str, result) -> int:
@@ -55,7 +54,7 @@ load_dotenv(dotenv_path=dotenv_path)
 
 # Инициализируем клиентов ИИ
 client = genai.Client(api_key=os.getenv("API_KEY"))
-groq_client = AsyncGroq(api_key=os.getenv("API_KEY_GROG"))
+client_2 = genai.Client(api_key=os.getenv("API_KEY_2"))
 
 
 def parse_docx(file_bytes: bytes) -> str:
@@ -196,7 +195,7 @@ async def extract_invoice_multimedia(text_prompt: str, files_list: list) -> Invo
     except Exception as e_gemini_25:
         print(f"⚠️ План А сбой: {e_gemini_25}. Пробуем План Б (Gemini 2.0)...")
         try:
-            response = await client.aio.models.generate_content(
+            response = await client_2.aio.models.generate_content(
                 model='gemini-2.0-flash', 
                 contents=contents, 
                 config=types.GenerateContentConfig(
@@ -207,17 +206,5 @@ async def extract_invoice_multimedia(text_prompt: str, files_list: list) -> Invo
             )
             return InvoiceData.model_validate_json(response.text)
         except Exception as e_gemini_20:
-            print(f"🚨 План Б сбой: {e_gemini_20}. Переключаемся на План В (Groq)...")
+            print(f"🚨 План Б сбой: {e_gemini_20}. Закончились попытки...")
             
-            # Текстовая сборка для Groq (так как он не видит картинки/PDF напрямую)
-            text_context = f"{system_instruction}\n\nСобери данные из текстов в единый JSON:\n"
-            for item in contents:
-                if isinstance(item, str):
-                    text_context += f"\n{item}"
-                    
-            groq_response = await groq_client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": text_context}],
-                response_format={"type": "json_object"}
-            )
-            return InvoiceData.model_validate_json(groq_response.choices[0].message.content)
