@@ -46,6 +46,8 @@ services:
       - key.env
     environment:
       - DB_HOST=postgres_db
+      - API_KEY=${API_KEY} 
+      - API_KEY_2=${API_KEY_2}
       - PYTHONUNBUFFERED=1
     depends_on:
       - postgres_db
