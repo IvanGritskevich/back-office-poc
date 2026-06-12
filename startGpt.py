@@ -126,7 +126,8 @@ async def save_to_db(result: InvoiceData, created_by: int):
                 has_nz = result.get('has_nz_tax_15', 'Нет')
             else:
                 has_nz = getattr(result, 'has_nz_tax_15', 'Нет')
-
+            
+            is_nz_tax = True if has_nz == "Да" else False
             # 2. Записываем сам счет в таблицу bills, привязывая его к ID клиента и ID менеджера
             await conn.execute("""
                 INSERT INTO bills (client_id, amount, currency, has_nz_tax_15, created_by) 
