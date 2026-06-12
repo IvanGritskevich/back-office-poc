@@ -105,7 +105,15 @@ async def save_to_db(result: InvoiceData, created_by: int):
                 
             # Если клиента нет, создаем новую карточку клиента
             if not client_id:
-                address_str = result.address.to_string() if result.address else "Не указан"
+                if result.address:
+                    if hasattr(result.address, 'to_string'):
+                        address_str = result.address.to_string()
+                    elif isinstance(result.address, dict):
+                        address_str = result.address.get('street', 'Не указан')
+                    else:
+                        address_str = getattr(result.address, 'street', 'Не указан')
+                else:
+                    address_str = "Не указан"
                 client_id = await conn.fetchval("""
                     INSERT INTO clients (name, address, city, country, postal, email) 
                     VALUES ($1, $2, $3, $4, $5, $6) 
