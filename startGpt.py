@@ -120,8 +120,8 @@ async def save_to_db(result: InvoiceData, created_by: int):
                     RETURNING client_id
                 """, result.name, address_str, result.city, result.country, result.postal, result.email)
 
-            # Превращаем "Да"/"Нет" от ИИ в понятный для Postgres BOOLEAN (True/False)
-            is_nz_tax = True if result.has_nz_tax_15 == "Да" else False
+            has_nz = result.has_nz_tax_15 if hasattr(result, 'has_nz_tax_15') else getattr(result, 'has_nz_tax_15', dict(result).get('has_nz_tax_15', 'Нет'))
+            is_nz_tax = True if has_nz == "Да" else False
 
             # 2. Записываем сам счет в таблицу bills, привязывая его к ID клиента и ID менеджера
             await conn.execute("""
