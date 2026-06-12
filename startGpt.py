@@ -53,7 +53,9 @@ dotenv_path = Path('key.env')
 load_dotenv(dotenv_path=dotenv_path)
 
 # Инициализируем клиентов ИИ
-client = genai.Client(api_key=os.getenv("API_KEY"))
+os.environ["GEMINI_API_KEY"] = os.getenv("API_KEY", "")
+
+client = genai.Client() 
 client_2 = genai.Client(api_key=os.getenv("API_KEY_2"))
 
 
