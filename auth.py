@@ -50,7 +50,7 @@ async def check_user_access(user_id: int) -> bool:
                 client_id INT REFERENCES clients(client_id) ON DELETE CASCADE,
                 amount NUMERIC(15, 2),
                 currency VARCHAR(10),
-                manager_id BIGINT,
+                created_by BIGINT,
                 has_nz_tax_15 BOOLEAN,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );

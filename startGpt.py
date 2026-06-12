@@ -55,6 +55,7 @@ load_dotenv(dotenv_path=dotenv_path)
 api_key_1 = os.getenv("API_KEY")
 api_key_2 = os.getenv("API_KEY_2")
 
+
 # Инициализируем клиенты строго с явным указанием api_key
 client = genai.Client(api_key=api_key_1)
 client_2 = genai.Client(api_key=api_key_2)
@@ -86,7 +87,7 @@ def parse_xlsx(file_bytes: bytes) -> str:
     return "\n".join(full_text)
 
 
-async def save_to_db(result: InvoiceData, manager_id: int):
+async def save_to_db(result: InvoiceData, created_by: int):
     conn = await asyncpg.connect(
         user=os.getenv("DB_USER"), 
         password=os.getenv("DB_PASSWORD"),
@@ -118,7 +119,7 @@ async def save_to_db(result: InvoiceData, manager_id: int):
             await conn.execute("""
                 INSERT INTO bills (client_id, amount, currency, has_nz_tax_15, created_by) 
                 VALUES ($1, $2, $3, $4, $5)
-            """, client_id, result.amount, result.currency, is_nz_tax, manager_id)
+            """, client_id, result.amount, result.currency, is_nz_tax, created_by)
         
     finally:
         await conn.close()

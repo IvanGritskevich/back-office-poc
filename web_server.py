@@ -48,7 +48,7 @@ async def confirm_invoice(pending_id: int, request: Request):
         
         # 🚀 ВЫГРУЖАЕМ В ТВОИ БОЕВЫЕ ТАБЛИЦЫ (clients и bills)
         SYSTEM_MAIL_MANAGER_ID = 99999
-        await startGpt.save_to_db(invoice_obj, manager_id=SYSTEM_MAIL_MANAGER_ID)
+        await startGpt.save_to_db(invoice_obj, created_by=SYSTEM_MAIL_MANAGER_ID)
         
         # Закрываем статус во временной таблице
         await conn.execute("UPDATE pending_invoices SET status = 'confirmed' WHERE id = $1", pending_id)
@@ -123,7 +123,7 @@ async def save_edited_invoice(
         
         # 🚀 ВЫГРУЖАЕМ В ТВОИ БОЕВЫЕ ТАБЛИЦЫ (clients и bills)
         SYSTEM_MAIL_MANAGER_ID = 99999
-        await startGpt.save_to_db(invoice_obj, manager_id=SYSTEM_MAIL_MANAGER_ID)
+        await startGpt.save_to_db(invoice_obj, created_by=SYSTEM_MAIL_MANAGER_ID)
         
         # Обновляем временную таблицу (сохраняем историю того, что исправил человек)
         await conn.execute(

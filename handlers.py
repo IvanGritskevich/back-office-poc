@@ -73,15 +73,15 @@ async def process_accumulated_media(group_id: str, chat_id: int, bot: AsyncTeleB
     try:
         combined_text = data["text"]
         files = data["files"]
-        manager_id = data.get("user_id", 0)
+        created_by = data.get("user_id", 0)
         
         result = await startGpt.extract_invoice_multimedia(text_prompt=combined_text, files_list=files)
         
         # Сохраняем результат в оперативную память сессии пользователя
-        USER_RESULTS[manager_id] = result
+        USER_RESULTS[created_by] = result
         
         # Переводим пользователя в состояние ожидания подтверждения данных
-        await bot.set_state(manager_id, InvoiceStates.confirm_data, chat_id)
+        await bot.set_state(created_by, InvoiceStates.confirm_data, chat_id)
         
         await bot.delete_message(chat_id, msg.message_id)
         await bot.send_message(
@@ -139,7 +139,7 @@ def register_all_handlers(bot: AsyncTeleBot):
             result = USER_RESULTS.pop(user_id)
             await bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text="⏳ Сохраняю данные.")
             try:
-                await startGpt.save_to_db(result, manager_id=user_id)
+                await startGpt.save_to_db(result, created_by=user_id)
                 await bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text="🚀 Данные успешно сохранены!")
                 await bot.delete_state(user_id, chat_id)
             except Exception as e:
