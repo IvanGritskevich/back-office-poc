@@ -13,73 +13,54 @@ from email.mime.multipart import MIMEMultipart
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 465
-#
-#async def send_verification_email(to_email: str, result, pending_id: int):
-#    """Отправляет сотруднику письмо с результатами разбора ИИ и ссылками на действия"""
-#    
-#    # Ссылки будут вести на наш будущий веб-сервер (пока локальный)
-#    confirm_url = f"http://localhost:8000/confirm/{pending_id}"
-#    edit_url = f"http://localhost:8000/edit/{pending_id}"
-#
-#    msg = MIMEMultipart("alternative")
-#    msg["Subject"] = f"🤖 Проверка инвойса: {result.name or 'Неизвестный клиент'}"
-#    msg["From"] = MAIL_USER
-#    msg["To"] = to_email
-#
-#    # Формируем красивое HTML-письмо с кнопками
-#    html = f"""
-#    <html>
-#      <body style="font-family: Arial, sans-serif; color: #333;">
-#        <h2 style="color: #4A90E2;">📋 Результат автоматического разбора ИИ</h2>
-#        <p>Пожалуйста, проверьте корректность данных перед отправкой в базу данных:</p>
-#        <table style="border-collapse: collapse; width: 100%; max-width: 500px;">
-#          <tr style="background-color: #f2f2f2;"><td style="padding: 8px; font-weight: bold;">Имя клиента:</td><td style="padding: 8px;">{result.name}</td></tr>
-#          <tr><td style="padding: 8px; font-weight: bold;">Сумма:</td><td style="padding: 8px;">{result.amount} {result.currency}</td></tr>
-#          <tr style="background-color: #f2f2f2;"><td style="padding: 8px; font-weight: bold;">Город/Страна:</td><td style="padding: 8px;">{result.city}, {result.country}</td></tr>
-#          <tr><td style="padding: 8px; font-weight: bold;">Индекс:</td><td style="padding: 8px;">{result.postal}</td></tr>
-#        </table>
-#        
-#        <br><br>
-#        <div style="display: flex; gap: 15px;">
-#            <a href="{confirm_url}" style="background-color: #2ECC71; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">✅ Всё верно, внести в БД</a>
-#            <a href="{edit_url}" style="background-color: #E74C3C; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">❌ Есть ошибки, исправить</a>
-#        </div>
-#        <br>
-#        <p style="font-size: 12px; color: #7f8c8d;">ID сессии проверки: {pending_id}</p>
-#      </body>
-#    </html>
-#    """
-#    
-#    msg.attach(MIMEText(html, "html", "utf-8"))
-#
-#    # Асинхронно отправляем через фоновый поток, чтобы не вешать воркер
-#    def _send():
-#        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-#            server.starttls() # Включаем шифрование
-#            server.login(MAIL_USER, MAIL_PASSWORD)
-#            server.sendmail(MAIL_USER, to_email, msg.as_string())
-#
-#    await asyncio.to_thread(_send)
-#    print(f"📩 Письмо-верификация успешно отправлено на {to_email}")
+
 async def send_verification_email(to_email: str, result, pending_id: int):
-    """Имитирует отправку письма и выводит интерактивную ссылку в консоль VS Code"""
+    """Отправляет сотруднику письмо с результатами разбора ИИ и ссылками на действия"""
     
-    # Ссылки на твой будущий локальный веб-интерфейс проверки
+    # Ссылки будут вести на наш будущий веб-сервер (пока локальный)
     confirm_url = f"http://localhost:8000/confirm/{pending_id}"
     edit_url = f"http://localhost:8000/edit/{pending_id}"
 
-    print("\n" + "="*60)
-    print(f"📨 [ИМИТАЦИЯ ОТПРАВКИ EMAIL] -> Направлено на: {to_email}")
-    print(f"📋 Тема: Проверка инвойса: {result.name or 'Неизвестный клиент'}")
-    print(f"💰 Сумма к верификации: {result.amount} {result.currency}")
-    print("-"*60)
-    print("🔗 ДЛЯ ТЕСТИРОВАНИЯ КЛИКНИТЕ ПО ССЫЛКЕ НИЖЕ:")
-    print(f"✅ Подтвердить и выгрузить в БД: {confirm_url}")
-    print(f"❌ Изменить данные (ошибки ИИ):   {edit_url}")
-    print("="*60 + "\n")
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"🤖 Проверка инвойса: {result.name or 'Неизвестный клиент'}"
+    msg["From"] = MAIL_USER
+    msg["To"] = to_email
 
-    # Небольшая задержка, имитирующая отправку по сети
-    await asyncio.sleep(0.5)
+    # Формируем красивое HTML-письмо с кнопками
+    html = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #333;">
+        <h2 style="color: #4A90E2;">📋 Результат автоматического разбора ИИ</h2>
+        <p>Пожалуйста, проверьте корректность данных перед отправкой в базу данных:</p>
+        <table style="border-collapse: collapse; width: 100%; max-width: 500px;">
+          <tr style="background-color: #f2f2f2;"><td style="padding: 8px; font-weight: bold;">Имя клиента:</td><td style="padding: 8px;">{result.name}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Сумма:</td><td style="padding: 8px;">{result.amount} {result.currency}</td></tr>
+          <tr style="background-color: #f2f2f2;"><td style="padding: 8px; font-weight: bold;">Город/Страна:</td><td style="padding: 8px;">{result.city}, {result.country}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Индекс:</td><td style="padding: 8px;">{result.postal}</td></tr>
+        </table>
+        
+        <br><br>
+        <div style="display: flex; gap: 15px;">
+            <a href="{confirm_url}" style="background-color: #2ECC71; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">✅ Всё верно, внести в БД</a>
+            <a href="{edit_url}" style="background-color: #E74C3C; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">❌ Есть ошибки, исправить</a>
+        </div>
+        <br>
+        <p style="font-size: 12px; color: #7f8c8d;">ID сессии проверки: {pending_id}</p>
+      </body>
+    </html>
+    """
+    
+    msg.attach(MIMEText(html, "html", "utf-8"))
+
+    # Асинхронно отправляем через фоновый поток, чтобы не вешать воркер
+    def _send():
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls() # Включаем шифрование
+            server.login(MAIL_USER, MAIL_PASSWORD)
+            server.sendmail(MAIL_USER, to_email, msg.as_string())
+
+    await asyncio.to_thread(_send)
+    print(f"📩 Письмо-верификация успешно отправлено на {to_email}")
 # Загружаем конфигурацию
 dotenv_path = Path('key.env')
 load_dotenv(dotenv_path=dotenv_path)
