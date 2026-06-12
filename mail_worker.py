@@ -54,8 +54,7 @@ async def send_verification_email(to_email: str, result, pending_id: int):
 
     # Асинхронно отправляем через фоновый поток, чтобы не вешать воркер
     def _send():
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls() # Включаем шифрование
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
             server.login(MAIL_USER, MAIL_PASSWORD)
             server.sendmail(MAIL_USER, to_email, msg.as_string())
 
