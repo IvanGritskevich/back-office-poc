@@ -24,12 +24,44 @@ async def check_user_access(user_id: int) -> bool:
         host=os.getenv("DB_HOST")
     )
     try:
-        # Убедимся, что таблица пользователей существует (структура из прошлого шага)
+        # Убедимся, что таблицы существуют
         await conn.execute("""
+            -- 1. Таблица пользователей бота
             CREATE TABLE IF NOT EXISTS users (
                 user_id BIGINT PRIMARY KEY,
                 username TEXT,
                 added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            -- 2. Таблица клиентов
+            CREATE TABLE IF NOT EXISTS clients (
+                client_id SERIAL PRIMARY KEY,
+                name TEXT,
+                address TEXT,
+                city TEXT,
+                country TEXT,
+                postal TEXT,
+                email TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- 3. Таблица счетов (bills)
+            CREATE TABLE IF NOT EXISTS bills (
+                bill_id SERIAL PRIMARY KEY,
+                client_id INT REFERENCES clients(client_id) ON DELETE CASCADE,
+                amount NUMERIC(15, 2),
+                currency VARCHAR(10),
+                manager_id BIGINT,
+                has_nz_tax_15 BOOLEAN,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- 4. Временная таблица верификации инвойсов
+            CREATE TABLE IF NOT EXISTS pending_invoices (
+                id SERIAL PRIMARY KEY,
+                sender_email VARCHAR(255) NOT NULL,
+                raw_data JSONB NOT NULL,    
+                status VARCHAR(50) DEFAULT 'pending',    
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
         
@@ -42,10 +74,11 @@ async def check_user_access(user_id: int) -> bool:
 async def register_new_user(user_id: int, username: str) -> bool:
     """Добавляет нового авторизованного пользователя в БД"""
     conn = await asyncpg.connect(
-        user=os.getenv("DB_USER"), 
+        user=os.getenv("DB_USER", "postgres"), 
         password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"), 
-        host=os.getenv("DB_HOST")
+        database=os.getenv("DB_NAME", "exel_group"), 
+        host=os.getenv("DB_HOST", "postgres_db"),
+        port=os.getenv("DB_PORT", "5432")
     )
     try:
         await conn.execute("""

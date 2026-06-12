@@ -27,7 +27,7 @@ async def save_to_pending(sender_email: str, result) -> int:
         user=os.getenv("DB_USER", "postgres"),
         password=os.getenv("DB_PASSWORD"),
         database=os.getenv("DB_NAME", "exel_group"),
-        host=os.getenv("DB_HOST", "127.0.0.1"),
+        host=os.getenv("DB_HOST", "postgres_db"),
         port=os.getenv("DB_PORT", "5432")
     )
     

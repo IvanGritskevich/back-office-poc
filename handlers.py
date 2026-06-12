@@ -156,7 +156,7 @@ def register_all_handlers(bot: AsyncTeleBot):
             )
 
     # Коллбэк для выбора конкретного поля редактирования
-    @bot.callback_query_handler(state=InvoiceStates.choose_field)
+    @bot.callback_query_handler(func=lambda call: True, state=InvoiceStates.choose_field)
     async def handle_field_selection(call):
         user_id = call.from_user.id
         chat_id = call.message.chat.id

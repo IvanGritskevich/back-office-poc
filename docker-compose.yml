@@ -1,0 +1,55 @@
+services:
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: exel_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-exel_group}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+
+  web_server:
+    build: .
+    container_name: exel_web_server
+    command: uvicorn web_server:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - key.env
+    environment:
+      - DB_HOST=postgres_db
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - postgres_db
+    restart: always
+
+  mail_worker:
+    build: .
+    container_name: exel_mail_worker
+    command: python mail_worker.py
+    env_file:
+      - key.env
+    environment:
+      - DB_HOST=postgres_db
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - postgres_db
+    restart: always
+
+  telegram_bot:
+    build: .
+    container_name: exel_telegram_bot
+    command: python test.py
+    env_file:
+      - key.env
+    environment:
+      - DB_HOST=postgres_db
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - postgres_db
+    restart: always
+
+volumes:
+  pgdata:
