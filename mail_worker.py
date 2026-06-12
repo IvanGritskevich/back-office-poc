@@ -17,9 +17,10 @@ SMTP_PORT = 465
 async def send_verification_email(to_email: str, result, pending_id: int):
     """Отправляет сотруднику письмо с результатами разбора ИИ и ссылками на действия"""
     
-    # Ссылки будут вести на наш будущий веб-сервер (пока локальный)
-    confirm_url = f"http://localhost:8000/confirm/{pending_id}"
-    edit_url = f"http://localhost:8000/edit/{pending_id}"
+    SERVER_IP = "34.129.5.162"
+
+    confirm_url = f"http://{SERVER_IP}:8000/confirm/{pending_id}"
+    edit_url = f"http://{SERVER_IP}:8000/edit/{pending_id}"
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"🤖 Проверка инвойса: {result.name or 'Неизвестный клиент'}"
@@ -29,23 +30,34 @@ async def send_verification_email(to_email: str, result, pending_id: int):
     # Формируем красивое HTML-письмо с кнопками
     html = f"""
     <html>
-      <body style="font-family: Arial, sans-serif; color: #333;">
-        <h2 style="color: #4A90E2;">📋 Результат автоматического разбора ИИ</h2>
-        <p>Пожалуйста, проверьте корректность данных перед отправкой в базу данных:</p>
-        <table style="border-collapse: collapse; width: 100%; max-width: 500px;">
-          <tr style="background-color: #f2f2f2;"><td style="padding: 8px; font-weight: bold;">Имя клиента:</td><td style="padding: 8px;">{result.name}</td></tr>
-          <tr><td style="padding: 8px; font-weight: bold;">Сумма:</td><td style="padding: 8px;">{result.amount} {result.currency}</td></tr>
-          <tr style="background-color: #f2f2f2;"><td style="padding: 8px; font-weight: bold;">Город/Страна:</td><td style="padding: 8px;">{result.city}, {result.country}</td></tr>
-          <tr><td style="padding: 8px; font-weight: bold;">Индекс:</td><td style="padding: 8px;">{result.postal}</td></tr>
+      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+        <h2 style="color: #4A90E2;">📋 Результат автоматического разбора инвойса ИИ</h2>
+        <p>Пожалуйста, проверьте полный набор данных перед подтверждением записи в Exel Group:</p>
+        
+        <table style="border-collapse: collapse; width: 100%; max-width: 600px; border: 1px solid #ddd;">
+          <tr style="background-color: #4A90E2; color: white;">
+            <th style="padding: 10px; text-align: left;">Параметр</th>
+            <th style="padding: 10px; text-align: left;">Значение, найденное ИИ</th>
+          </tr>
+          <tr style="background-color: #f9f9f9;"><td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd;">Имя клиента:</td><td style="padding: 8px; border-bottom: 1px solid #ddd;">{result.name or 'Не указано'}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd;">Сумма счета:</td><td style="padding: 8px; border-bottom: 1px solid #ddd; color: #27AE60; font-weight: bold;">{result.amount} {result.currency}</td></tr>
+          <tr style="background-color: #f9f9f9;"><td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd;">Улица (из адреса):</td><td style="padding: 8px; border-bottom: 1px solid #ddd;">{result.address.street if result.address else 'Не указана'}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd;">Город:</td><td style="padding: 8px; border-bottom: 1px solid #ddd;">{result.city or 'Не указан'}</td></tr>
+          <tr style="background-color: #f9f9f9;"><td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd;">Страна:</td><td style="padding: 8px; border-bottom: 1px solid #ddd;">{result.country or 'Не указана'}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd;">Почтовый индекс:</td><td style="padding: 8px; border-bottom: 1px solid #ddd;">{result.postal or 'Не указан'}</td></tr>
+          <tr style="background-color: #f9f9f9;"><td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd;">Email клиента:</td><td style="padding: 8px; border-bottom: 1px solid #ddd;">{result.email or 'Не указан'}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd;">Юзернейм:</td><td style="padding: 8px; border-bottom: 1px solid #ddd;">{result.username or 'Не указан'}</td></tr>
+          <tr style="background-color: #f9f9f9;"><td style="padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd;">Налог NZ 15%?</td><td style="padding: 8px; border-bottom: 1px solid #ddd; font-weight: bold;">{result.has_nz_tax_15 or 'Нет'}</td></tr>
         </table>
         
         <br><br>
-        <div style="display: flex; gap: 15px;">
-            <a href="{confirm_url}" style="background-color: #2ECC71; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">✅ Всё верно, внести в БД</a>
-            <a href="{edit_url}" style="background-color: #E74C3C; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">❌ Есть ошибки, исправить</a>
+        <p><strong>Выберите действие:</strong></p>
+        <div style="margin-top: 15px;">
+            <a href="{confirm_url}" style="background-color: #2ECC71; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-right: 15px; display: inline-block;">✅ Всё верно, внести в БД</a>
+            <a href="{edit_url}" style="background-color: #E74C3C; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">❌ Есть ошибки, исправить</a>
         </div>
-        <br>
-        <p style="font-size: 12px; color: #7f8c8d;">ID сессии проверки: {pending_id}</p>
+        <br><br>
+        <p style="font-size: 11px; color: #7f8c8d;">Системный номер сессии верификации: {pending_id}</p>
       </body>
     </html>
     """
